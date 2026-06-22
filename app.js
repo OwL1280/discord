@@ -510,7 +510,23 @@ function subscribeToGuildVoicePresence(guildId) {
       leftPresences.forEach(p => { delete state.voice.guildVoiceStates[p.user_id]; });
       renderChannels();
     })
-    .subscribe();
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        if (state.voice.activeChannelId && state.voice.activeGuildId === guildId) {
+          await channel.track({
+            user_id: state.currentUser.id,
+            channel_id: state.voice.activeChannelId,
+            guild_id: state.voice.activeGuildId,
+            display_name: state.userProfile.display_name || state.userProfile.username,
+            username: state.userProfile.username,
+            avatar_url: state.userProfile.avatar_url || null,
+            isMuted: state.voice.isMuted,
+            isDeafened: state.voice.isDeafened,
+            speaking: false
+          });
+        }
+      }
+    });
 
   state.voice.guildPresenceSub = channel;
 }
@@ -1007,7 +1023,22 @@ function buildMemberCardHTML(member, roleColor) {
 // ICE servers (free STUN servers from Google)
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' }
+  { urls: 'stun:stun1.l.google.com:19302' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  }
 ];
 
 async function connectVoiceChannel(channel) {
@@ -1147,7 +1178,7 @@ async function connectVoiceChannel(channel) {
     .subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
         // Track our presence in this voice channel
-        await sigChannel.track({
+        const presencePayload = {
           user_id: state.currentUser.id,
           channel_id: channel.id,
           guild_id: state.currentGuildId,
@@ -1157,7 +1188,11 @@ async function connectVoiceChannel(channel) {
           isMuted: false,
           isDeafened: false,
           speaking: false
-        });
+        };
+        await sigChannel.track(presencePayload);
+        if (state.voice.guildPresenceSub) {
+          await state.voice.guildPresenceSub.track(presencePayload);
+        }
       }
     });
 
@@ -1275,6 +1310,10 @@ async function disconnectVoiceChannel() {
     state.voice.presenceChannel = null;
   }
 
+  if (state.voice.guildPresenceSub) {
+    await state.voice.guildPresenceSub.untrack();
+  }
+
   state.voice.activeChannelId = null;
   state.voice.activeGuildId = null;
   state.voice.isMuted = false;
@@ -1310,18 +1349,22 @@ function toggleMute() {
   state.voice.localStream.getAudioTracks().forEach(t => { t.enabled = !state.voice.isMuted; });
   updateVoiceFooterUI();
   // Update presence
+  const presencePayload = {
+    user_id: state.currentUser.id,
+    channel_id: state.voice.activeChannelId,
+    guild_id: state.voice.activeGuildId,
+    display_name: state.userProfile.display_name || state.userProfile.username,
+    username: state.userProfile.username,
+    avatar_url: state.userProfile.avatar_url || null,
+    isMuted: state.voice.isMuted,
+    isDeafened: state.voice.isDeafened,
+    speaking: false
+  };
   if (state.voice.presenceChannel) {
-    state.voice.presenceChannel.track({
-      user_id: state.currentUser.id,
-      channel_id: state.voice.activeChannelId,
-      guild_id: state.voice.activeGuildId,
-      display_name: state.userProfile.display_name || state.userProfile.username,
-      username: state.userProfile.username,
-      avatar_url: state.userProfile.avatar_url || null,
-      isMuted: state.voice.isMuted,
-      isDeafened: state.voice.isDeafened,
-      speaking: false
-    });
+    state.voice.presenceChannel.track(presencePayload);
+  }
+  if (state.voice.guildPresenceSub) {
+    state.voice.guildPresenceSub.track(presencePayload);
   }
   renderChannels();
 }
@@ -1343,18 +1386,22 @@ function toggleDeafen() {
     if (audioEl) audioEl.muted = state.voice.isDeafened;
   });
   updateVoiceFooterUI();
+  const presencePayload = {
+    user_id: state.currentUser.id,
+    channel_id: state.voice.activeChannelId,
+    guild_id: state.voice.activeGuildId,
+    display_name: state.userProfile.display_name || state.userProfile.username,
+    username: state.userProfile.username,
+    avatar_url: state.userProfile.avatar_url || null,
+    isMuted: state.voice.isMuted,
+    isDeafened: state.voice.isDeafened,
+    speaking: false
+  };
   if (state.voice.presenceChannel) {
-    state.voice.presenceChannel.track({
-      user_id: state.currentUser.id,
-      channel_id: state.voice.activeChannelId,
-      guild_id: state.voice.activeGuildId,
-      display_name: state.userProfile.display_name || state.userProfile.username,
-      username: state.userProfile.username,
-      avatar_url: state.userProfile.avatar_url || null,
-      isMuted: state.voice.isMuted,
-      isDeafened: state.voice.isDeafened,
-      speaking: false
-    });
+    state.voice.presenceChannel.track(presencePayload);
+  }
+  if (state.voice.guildPresenceSub) {
+    state.voice.guildPresenceSub.track(presencePayload);
   }
   renderChannels();
 }
