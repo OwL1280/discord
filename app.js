@@ -1018,33 +1018,34 @@ function buildMemberCardHTML(member, roleColor) {
 // WebRTC Voice Chat Logic
 // -------------------------------------------------------------
 
-// ICE servers - STUN + multiple free TURN providers for cross-network support
+// ICE servers - STUN + Metered.ca free TURN for cross-network support
+// Metered.ca free tier: https://dashboard.metered.ca (1GB/month free, no credit card)
 const ICE_SERVERS = [
   // Google STUN
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
-  // freestun.net - free, no registration required
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  // Metered.ca TURN - replace with your own free credentials from https://dashboard.metered.ca
   {
-    urls: 'turn:freestun.net:3478',
-    username: 'free',
-    credential: 'free'
+    urls: 'turn:standard.relay.metered.ca:80',
+    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
+    credential: 'discord+clone+turn'
   },
   {
-    urls: 'turns:freestun.net:5349',
-    username: 'free',
-    credential: 'free'
-  },
-  // OpenRelay (metered.ca) - backup
-  {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
+    urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
+    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
+    credential: 'discord+clone+turn'
   },
   {
-    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
+    urls: 'turn:standard.relay.metered.ca:443',
+    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
+    credential: 'discord+clone+turn'
+  },
+  {
+    urls: 'turns:standard.relay.metered.ca:443',
+    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
+    credential: 'discord+clone+turn'
   }
 ];
 
@@ -1380,13 +1381,13 @@ async function disconnectVoiceChannel() {
     state.voice.localAnalyser = null;
   }
 
-  // Unsubscribe and remove signaling channel from client cache
+  // Unsubscribe signaling channel
   if (state.voice.presenceChannel) {
-    await supabase.removeChannel(state.voice.presenceChannel);
+    await state.voice.presenceChannel.unsubscribe();
     state.voice.presenceChannel = null;
   }
 
-  // Untrack user from guild presence channel but do not remove the channel
+  // Untrack user from guild presence channel but keep it alive for sidebar
   if (state.voice.guildPresenceSub) {
     await state.voice.guildPresenceSub.untrack();
   }
