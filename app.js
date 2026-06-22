@@ -12,7 +12,7 @@ let state = {
   roles: [],
   memberRoles: [],
   currentPermissions: 0n,
-  
+
   // Subscriptions
   msgSub: null,
   membersSub: null,
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Bind Auth events
   setupAuthEventListeners();
-  
+
   // Bind Modal and Panel actions
   setupAppEventListeners();
 
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function showConfigWarning() {
   document.getElementById('modal-overlay').classList.remove('hidden');
   document.getElementById('auth-modal').classList.add('hidden');
-  
+
   // Create a stunning warning panel
   const warningPanel = document.createElement('div');
   warningPanel.className = 'modal-box card-modal';
@@ -156,7 +156,7 @@ function setupAuthEventListeners() {
 
   document.getElementById('link-paste-token').addEventListener('click', async (e) => {
     e.preventDefault();
-    
+
     // Create a beautiful custom prompt modal overlay since window.prompt() is disabled in Electron
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -175,13 +175,13 @@ function setupAuthEventListeners() {
       </div>
     `;
     document.body.appendChild(overlay);
-    
+
     document.getElementById('btn-manual-token-cancel').onclick = () => overlay.remove();
     document.getElementById('btn-manual-token-submit').onclick = async () => {
       const url = document.getElementById('manual-token-url-input').value.trim();
       overlay.remove();
       if (!url) return;
-      
+
       try {
         const hashPart = url.includes('#') ? url.split('#')[1] : url;
         const params = new URLSearchParams(hashPart);
@@ -291,7 +291,7 @@ function updateUserProfileUI() {
   // Footer profile display
   document.getElementById('footer-display-name').textContent = state.userProfile.display_name || state.userProfile.username;
   document.getElementById('footer-username').textContent = `@${state.userProfile.username}`;
-  
+
   if (state.userProfile.avatar_url) {
     document.getElementById('footer-avatar').src = state.userProfile.avatar_url;
   } else {
@@ -426,14 +426,14 @@ async function selectGuild(guildId) {
     return;
   }
   document.getElementById('sidebar-header-title').querySelector('.header-title-text').textContent = guild.name;
-  
+
   // Permissions calculations
   state.currentPermissions = await window.api.calculatePermissions(guildId, state.currentUser.id);
-  
+
   // Server settings trigger visibility based on permissions
   const settingsTrigger = document.getElementById('guild-settings-trigger');
-  const hasManageServer = (state.currentPermissions & window.api.PERMISSIONS.MANAGE_GUILD) === window.api.PERMISSIONS.MANAGE_GUILD || 
-                           (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
+  const hasManageServer = (state.currentPermissions & window.api.PERMISSIONS.MANAGE_GUILD) === window.api.PERMISSIONS.MANAGE_GUILD ||
+    (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
   if (hasManageServer) {
     settingsTrigger.classList.remove('hidden');
   } else {
@@ -542,8 +542,8 @@ function renderChannels() {
   const container = document.getElementById('channel-list-scroller');
   container.innerHTML = '';
 
-  const hasManageChannels = (state.currentPermissions & window.api.PERMISSIONS.MANAGE_CHANNELS) === window.api.PERMISSIONS.MANAGE_CHANNELS || 
-                            (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
+  const hasManageChannels = (state.currentPermissions & window.api.PERMISSIONS.MANAGE_CHANNELS) === window.api.PERMISSIONS.MANAGE_CHANNELS ||
+    (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
 
   // Text channels category
   const textHeader = document.createElement('div');
@@ -572,7 +572,7 @@ function renderChannels() {
     const link = document.createElement('div');
     link.className = 'channel-link';
     if (state.currentChannelId === channel.id) link.classList.add('active');
-    
+
     // Hash SVG
     link.innerHTML = `
       <svg class="hashtag-icon" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M5.886 21l.886-5.886H1.143v-1.745h5.886l.886-5.886H2.286V5.738h5.886l.886-4.738h1.745L9.917 5.738h5.886l.886-4.738h1.745l-.886 4.738h5.631v1.745h-5.886l-.886 5.886h5.631v1.745h-5.886L16.29 21h-1.745l.886-5.886H9.545L8.66 21H6.914zm3.543-7.631h5.886l.886-5.886H9.429l-.886 5.886z"/></svg>
@@ -662,7 +662,7 @@ function renderChannels() {
 
 async function selectChannel(channelId) {
   state.currentChannelId = channelId;
-  
+
   // Render active selection
   renderChannels();
 
@@ -684,8 +684,8 @@ async function selectChannel(channelId) {
 
   // Setup Message Realtime Subscription
   if (state.msgSub) state.msgSub.unsubscribe();
-  
-  state.msgSub = window.api.subscribeToMessages(channelId, 
+
+  state.msgSub = window.api.subscribeToMessages(channelId,
     // On Insert
     async (newMessage) => {
       const messagesFeed = document.getElementById('message-feed');
@@ -712,7 +712,7 @@ async function selectChannel(channelId) {
   const canSend = await window.api.checkUserPermission(state.currentGuildId, state.currentUser.id, window.api.PERMISSIONS.SEND_MESSAGES);
   const inputArea = document.getElementById('message-input-area');
   const inputField = document.getElementById('message-input');
-  
+
   if (canSend) {
     inputArea.classList.remove('hidden');
     inputField.disabled = false;
@@ -731,7 +731,7 @@ async function loadMessages() {
     const messages = await window.api.getMessages(state.currentChannelId);
     const container = document.getElementById('message-feed');
     container.innerHTML = '';
-    
+
     messages.forEach(message => {
       container.appendChild(buildMessageHTML(message));
     });
@@ -760,7 +760,7 @@ function buildMessageHTML(message) {
   const author = document.createElement('span');
   author.className = 'message-author';
   author.textContent = (message.profiles && (message.profiles.display_name || message.profiles.username)) || 'Usuario';
-  
+
   // Color the author username according to their highest role color
   const authorRoles = state.memberRoles.filter(mr => mr.user_id === message.author_id);
   if (authorRoles.length > 0) {
@@ -793,7 +793,7 @@ function buildMessageHTML(message) {
   // Message Options (Edit/Delete)
   const isAuthor = message.author_id === state.currentUser.id;
   const hasManageMessages = (state.currentPermissions & window.api.PERMISSIONS.MANAGE_MESSAGES) === window.api.PERMISSIONS.MANAGE_MESSAGES ||
-                             (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
+    (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
 
   if (isAuthor || hasManageMessages) {
     const actions = document.createElement('div');
@@ -909,7 +909,7 @@ function renderMembersList() {
 
     // Get roles for this member
     const mRoles = state.memberRoles.filter(mr => mr.user_id === member.user_id && mr.guild_id === state.currentGuildId);
-    
+
     if (mRoles.length === 0) {
       ungroupedMembers.push(member);
     } else {
@@ -1029,29 +1029,29 @@ const ICE_SERVERS = [
   // Metered.ca TURN - replace with your own free credentials from https://dashboard.metered.ca
   {
     urls: 'turn:standard.relay.metered.ca:80',
-    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
-    credential: 'discord+clone+turn'
+    username: process.env.METERED_USERNAME,
+    credential: process.env.METERED_CREDENTIAL
   },
   {
     urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
-    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
-    credential: 'discord+clone+turn'
+    username: process.env.METERED_USERNAME,
+    credential: process.env.METERED_CREDENTIAL
   },
   {
     urls: 'turn:standard.relay.metered.ca:443',
-    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
-    credential: 'discord+clone+turn'
+    username: process.env.METERED_USERNAME,
+    credential: process.env.METERED_CREDENTIAL
   },
   {
     urls: 'turns:standard.relay.metered.ca:443',
-    username: 'e7b8f0a5e3c9d1b2f4a6c8e0',
-    credential: 'discord+clone+turn'
+    username: process.env.METERED_USERNAME,
+    credential: process.env.METERED_CREDENTIAL
   }
 ];
 
 async function connectVoiceChannel(channel) {
   const hasView = (state.currentPermissions & window.api.PERMISSIONS.VIEW_CHANNEL) === window.api.PERMISSIONS.VIEW_CHANNEL ||
-                  (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
+    (state.currentPermissions & window.api.PERMISSIONS.ADMINISTRATOR) === window.api.PERMISSIONS.ADMINISTRATOR;
   if (!hasView) return alert('No tienes permisos para acceder a este canal');
 
   // If already in a voice channel, disconnect first
@@ -1184,7 +1184,7 @@ async function connectVoiceChannel(channel) {
         try {
           console.log(`[Signal ICE Broadcast] Adding ICE candidate to RTCPeerConnection for ${payload.from}`);
           await peerEntry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-        } catch(e) {
+        } catch (e) {
           console.error(`[Signal ICE Broadcast] Error adding ICE candidate:`, e);
         }
       }
@@ -1519,7 +1519,7 @@ function setupAppEventListeners() {
   // Attach mock actions
   document.getElementById('btn-message-attach').addEventListener('click', () => alert('Característica de archivos adjuntos (Simulado).'));
   document.getElementById('btn-message-emoji').addEventListener('click', () => alert('Característica de emojis (Simulado).'));
-  
+
   // Home click
   document.getElementById('btn-home').addEventListener('click', () => selectHome());
 
@@ -1552,11 +1552,11 @@ function setupAppEventListeners() {
     const btn = document.getElementById('btn-submit-create-server');
     const name = input.value.trim();
     if (!name) return alert('Debes ingresar un nombre');
-    
+
     input.disabled = true;
     btn.disabled = true;
     btn.textContent = 'Creando...';
-    
+
     try {
       const response = await window.api.createGuild(name);
       closeModal();
@@ -1577,11 +1577,11 @@ function setupAppEventListeners() {
     const btn = document.getElementById('btn-submit-join-server');
     const code = input.value.trim();
     if (!code) return alert('Debes ingresar un código de invitación');
-    
+
     input.disabled = true;
     btn.disabled = true;
     btn.textContent = 'Uniéndose...';
-    
+
     try {
       const response = await window.api.joinGuildByInvite(code);
       closeModal();
@@ -1619,20 +1619,20 @@ function setupAppEventListeners() {
 
     const guild = state.guilds.find(g => g.id === state.currentGuildId);
     document.getElementById('invite-server-name').textContent = guild.name;
-    
+
     // Generate code first with defaults (duration 7 days, infinite uses)
     await generateInviteCode();
     showModal('invite-modal');
   });
 
   document.getElementById('btn-generate-new-invite').addEventListener('click', generateInviteCode);
-  
+
   // Copy Invite link
   document.getElementById('btn-copy-invite').addEventListener('click', () => {
     const urlInput = document.getElementById('generated-invite-url');
     urlInput.select();
     navigator.clipboard.writeText(urlInput.value);
-    
+
     const copyBtn = document.getElementById('btn-copy-invite');
     copyBtn.textContent = '¡Copiado!';
     copyBtn.style.backgroundColor = 'var(--status-online)';
@@ -1658,7 +1658,7 @@ function setupAppEventListeners() {
       e.stopPropagation();
       const status = item.getAttribute('data-status');
       document.getElementById('status-picker').classList.add('hidden');
-      
+
       try {
         state.userProfile = await window.api.updateUserProfile({
           status: status
@@ -1694,7 +1694,7 @@ function setupAppEventListeners() {
     tab.addEventListener('click', () => {
       friendsTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      
+
       const tabName = tab.getAttribute('data-tab');
       if (tabName === 'add') {
         document.getElementById('friends-list').classList.add('hidden');
@@ -1722,7 +1722,7 @@ function setupAppEventListeners() {
     try {
       const profiles = await window.api.getProfiles();
       const match = profiles.find(p => p.username.toLowerCase() === username.toLowerCase());
-      
+
       if (!match) {
         messageEl.style.color = 'var(--status-dnd)';
         messageEl.textContent = `No se pudo encontrar a un usuario con el nombre "${username}".`;
@@ -1757,20 +1757,20 @@ function setupAppEventListeners() {
     const nameInput = document.getElementById('modal-new-channel-name');
     const name = nameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
     const type = document.querySelector('input[name="modal-new-channel-type"]:checked').value;
-    
+
     if (!name) return alert('Debes ingresar un nombre para el canal');
-    
+
     const btn = document.getElementById('btn-modal-submit-create-channel');
     btn.disabled = true;
     btn.textContent = 'Creando...';
-    
+
     try {
       const newChan = await window.api.createChannel(state.currentGuildId, name, type);
       closeModal();
       // Reload channels
       state.channels = await window.api.getGuildChannels(state.currentGuildId);
       renderChannels();
-      
+
       // Select the channel if it's a text channel
       if (type === 'text') {
         selectChannel(newChan.id);
@@ -1786,23 +1786,23 @@ function setupAppEventListeners() {
   // Submit Edit/Rename Channel
   document.getElementById('btn-modal-submit-edit-channel').addEventListener('click', async () => {
     if (!currentEditingChannel) return;
-    
+
     const nameInput = document.getElementById('modal-edit-channel-name');
     const name = nameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
     if (!name) return alert('Debes ingresar un nombre para el canal');
-    
+
     const btn = document.getElementById('btn-modal-submit-edit-channel');
     btn.disabled = true;
     btn.textContent = 'Guardando...';
-    
+
     try {
       await window.api.updateChannel(currentEditingChannel.id, name);
       closeModal();
-      
+
       // Refresh
       state.channels = await window.api.getGuildChannels(state.currentGuildId);
       renderChannels();
-      
+
       // If we edited the active channel, update header
       if (state.currentChannelId === currentEditingChannel.id) {
         selectChannel(currentEditingChannel.id);
@@ -1818,24 +1818,24 @@ function setupAppEventListeners() {
   // Delete Channel from Modal
   document.getElementById('btn-modal-delete-channel').addEventListener('click', async () => {
     if (!currentEditingChannel) return;
-    
-    const confirmMsg = currentEditingChannel.type === 'voice' 
+
+    const confirmMsg = currentEditingChannel.type === 'voice'
       ? `¿Estás seguro de que quieres eliminar el canal de voz ${currentEditingChannel.name}?`
       : `¿Estás seguro de que quieres eliminar el canal de texto #${currentEditingChannel.name}?`;
-      
+
     if (confirm(confirmMsg)) {
       const btn = document.getElementById('btn-modal-delete-channel');
       btn.disabled = true;
       btn.textContent = 'Eliminando...';
-      
+
       try {
         await window.api.deleteChannel(currentEditingChannel.id);
         closeModal();
-        
+
         // Refresh channels list
         state.channels = await window.api.getGuildChannels(state.currentGuildId);
         renderChannels();
-        
+
         // If we deleted the active channel, redirect
         if (state.currentChannelId === currentEditingChannel.id) {
           selectGuild(state.currentGuildId);
@@ -1914,7 +1914,7 @@ function showServerChoices() {
   document.getElementById('server-choices').classList.remove('hidden');
   document.getElementById('server-create-form').classList.add('hidden');
   document.getElementById('server-join-form').classList.add('hidden');
-  
+
   // reset inputs
   document.getElementById('new-server-name').value = '';
   document.getElementById('join-invite-code').value = '';
@@ -1931,7 +1931,7 @@ function showServerJoinForm() {
 // -------------------------------------------------------------
 function showModal(modalId) {
   document.getElementById('modal-overlay').classList.remove('hidden');
-  
+
   // hide all modals inside overlay
   const modals = document.getElementById('modal-overlay').querySelectorAll('.modal-box');
   modals.forEach(m => m.classList.add('hidden'));
@@ -1939,14 +1939,14 @@ function showModal(modalId) {
   document.getElementById(modalId).classList.remove('hidden');
 }
 
-window.closeModal = function() {
+window.closeModal = function () {
   document.getElementById('modal-overlay').classList.add('hidden');
 };
 
 function showSettingsModal(modalId) {
   // For fullscreen settings panels, we load them inside the main overlay
   document.getElementById('modal-overlay').classList.remove('hidden');
-  
+
   // hide other modals
   const modals = document.getElementById('modal-overlay').querySelectorAll('.modal-box');
   modals.forEach(m => m.classList.add('hidden'));
@@ -1964,9 +1964,9 @@ function showSettingsModal(modalId) {
   }
 }
 
-window.closeSettingsModal = function() {
+window.closeSettingsModal = function () {
   document.getElementById('modal-overlay').classList.add('hidden');
-  
+
   // hide settings modals explicitly
   document.getElementById('user-settings-modal').classList.add('hidden');
   document.getElementById('server-settings-modal').classList.add('hidden');
@@ -1978,7 +1978,7 @@ window.closeSettingsModal = function() {
 function setupGuildSettingsTabs() {
   const tabs = document.querySelectorAll('#server-settings-modal .settings-sidebar-item');
   const views = document.querySelectorAll('.guild-settings-tab-view');
-  
+
   // Clear tabs listener
   tabs.forEach(tab => {
     // Ignore Delete action trigger
@@ -1989,7 +1989,7 @@ function setupGuildSettingsTabs() {
       tab.classList.add('active');
 
       views.forEach(v => v.classList.add('hidden'));
-      
+
       const targetId = tab.id.replace('tab-guild-', 'view-guild-');
       document.getElementById(targetId).classList.remove('hidden');
 
@@ -2038,7 +2038,7 @@ function loadGuildSettingsOverview() {
     const name = document.getElementById('settings-guild-name').value.trim();
     const iconUrl = document.getElementById('settings-guild-icon-url').value.trim();
     if (!name) return alert('El nombre es requerido');
-    
+
     try {
       await window.api.updateGuildOverview(state.currentGuildId, name, iconUrl || null);
       closeSettingsModal();
@@ -2061,7 +2061,7 @@ function loadGuildSettingsRoles() {
     const item = document.createElement('div');
     item.className = 'role-manage-list-item';
     if (activeEditRoleId === role.id) item.classList.add('active');
-    
+
     const dot = document.createElement('div');
     dot.className = 'role-dot';
     dot.style.backgroundColor = role.color;
@@ -2071,7 +2071,7 @@ function loadGuildSettingsRoles() {
 
     item.appendChild(dot);
     item.appendChild(span);
-    
+
     item.onclick = () => selectRoleToEdit(role);
     container.appendChild(item);
   });
@@ -2094,7 +2094,7 @@ function loadGuildSettingsRoles() {
 
 function selectRoleToEdit(role) {
   activeEditRoleId = role.id;
-  
+
   // Highlight in sidebar
   const items = document.querySelectorAll('.role-manage-list-item');
   items.forEach(it => {
@@ -2238,7 +2238,7 @@ function loadGuildSettingsMembers() {
     rolesDiv.className = 'member-roles-container';
 
     const mRoles = state.memberRoles.filter(mr => mr.user_id === member.user_id && mr.guild_id === state.currentGuildId);
-    
+
     mRoles.forEach(mRole => {
       const rObj = state.roles.find(r => r.id === mRole.role_id);
       if (rObj && rObj.name !== '@everyone') {
@@ -2352,7 +2352,7 @@ function openAddRoleMenu(triggerElement, userId, currentRoles) {
   setTimeout(() => document.body.addEventListener('click', handleBodyClick), 50);
 }
 
-window.removeMemberRole = async function(userId, roleId) {
+window.removeMemberRole = async function (userId, roleId) {
   try {
     await window.api.removeRoleFromMember(state.currentGuildId, userId, roleId);
     state.memberRoles = await window.api.getMemberRoles(state.currentGuildId);
@@ -2369,7 +2369,7 @@ window.removeMemberRole = async function(userId, roleId) {
 async function loadFriends(tab = 'online') {
   const friendsList = document.getElementById('friends-list');
   if (!friendsList) return;
-  
+
   if (!state.addedFriendIds) {
     state.addedFriendIds = new Set();
     // Pre-populate with all other user profiles we can load initially
@@ -2380,15 +2380,15 @@ async function loadFriends(tab = 'online') {
           state.addedFriendIds.add(p.id);
         }
       });
-    } catch(e) {}
+    } catch (e) { }
   }
-  
+
   friendsList.innerHTML = '<div style="padding:20px; color:var(--text-muted); text-align:center;">Cargando amigos...</div>';
 
   try {
     const profiles = await window.api.getProfiles();
     state.allProfiles = profiles; // cache them
-    
+
     // Render DM list in sidebar as well!
     const otherProfiles = profiles.filter(p => p.id !== state.currentUser.id);
     renderDMsSidebar(otherProfiles);
@@ -2420,43 +2420,43 @@ async function loadFriends(tab = 'online') {
 function renderFriendRow(profile) {
   const row = document.createElement('div');
   row.className = 'friend-row';
-  
+
   const info = document.createElement('div');
   info.className = 'friend-info';
-  
+
   const avatarContainer = document.createElement('div');
   avatarContainer.className = 'avatar-container';
-  
+
   const avatar = document.createElement('img');
   avatar.className = 'user-avatar';
   avatar.src = profile.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png';
-  
+
   const indicator = document.createElement('div');
   indicator.className = `status-indicator ${profile.status || 'offline'}`;
-  
+
   avatarContainer.appendChild(avatar);
   avatarContainer.appendChild(indicator);
-  
+
   const details = document.createElement('div');
   details.className = 'friend-details';
-  
+
   const name = document.createElement('span');
   name.className = 'friend-name';
   name.textContent = profile.display_name || profile.username;
-  
+
   const status = document.createElement('span');
   status.className = 'friend-status';
   status.textContent = profile.custom_status || (profile.status === 'offline' ? 'Desconectado' : profile.status === 'dnd' ? 'No molestar' : profile.status === 'idle' ? 'Ausente' : 'Conectado');
-  
+
   details.appendChild(name);
   details.appendChild(status);
-  
+
   info.appendChild(avatarContainer);
   info.appendChild(details);
-  
+
   const actions = document.createElement('div');
   actions.className = 'friend-actions';
-  
+
   // Message Button
   const msgBtn = document.createElement('button');
   msgBtn.className = 'friend-action-btn';
@@ -2465,12 +2465,12 @@ function renderFriendRow(profile) {
   msgBtn.addEventListener('click', () => {
     startDMWithUser(profile.id, profile.username, profile.avatar_url);
   });
-  
+
   actions.appendChild(msgBtn);
-  
+
   row.appendChild(info);
   row.appendChild(actions);
-  
+
   return row;
 }
 
@@ -2478,14 +2478,14 @@ function renderDMsSidebar(profiles) {
   const scroller = document.getElementById('channel-list-scroller');
   if (!scroller) return;
   scroller.innerHTML = `<div class="channel-category-label">MENSAJES DIRECTOS</div>`;
-  
+
   profiles.forEach(profile => {
     const link = document.createElement('div');
     link.className = 'channel-link';
     if (state.currentDMUserId === profile.id) {
       link.classList.add('active');
     }
-    
+
     link.innerHTML = `
       <div class="avatar-container" style="width:24px; height:24px;">
         <img class="user-avatar" src="${profile.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png'}" style="width:24px; height:24px;">
@@ -2493,11 +2493,11 @@ function renderDMsSidebar(profiles) {
       </div>
       <span>${profile.display_name || profile.username}</span>
     `;
-    
+
     link.addEventListener('click', () => {
       startDMWithUser(profile.id, profile.username, profile.avatar_url);
     });
-    
+
     scroller.appendChild(link);
   });
 }
@@ -2514,7 +2514,7 @@ function startDMWithUser(userId, username, avatarUrl) {
   // Update layout displays
   document.getElementById('friends-view').classList.add('hidden');
   document.getElementById('friends-active-sidebar').classList.add('hidden');
-  
+
   document.getElementById('messages-scroller').classList.remove('hidden');
   document.getElementById('message-input-area').classList.remove('hidden');
   document.getElementById('member-sidebar').classList.add('hidden'); // DMs don't have member sidebar
@@ -2597,7 +2597,7 @@ function renderDMFeed() {
   feed.innerHTML = '';
 
   const messages = state.dmMessages[userId] || [];
-  
+
   if (messages.length === 0) {
     const matchProfile = state.allProfiles.find(p => p.id === userId) || { username: 'Amigo' };
     feed.innerHTML = `
@@ -2613,7 +2613,7 @@ function renderDMFeed() {
   messages.forEach(msg => {
     const item = document.createElement('div');
     item.className = 'message-item';
-    
+
     const avatar = document.createElement('img');
     avatar.className = 'message-avatar';
     avatar.src = msg.profiles?.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png';
@@ -2628,7 +2628,7 @@ function renderDMFeed() {
     const author = document.createElement('span');
     author.className = 'message-author';
     author.textContent = msg.profiles?.display_name || msg.profiles?.username || 'Usuario';
-    
+
     const timestamp = document.createElement('span');
     timestamp.className = 'message-timestamp';
     const date = new Date(msg.created_at);
@@ -2656,7 +2656,7 @@ let currentEditingChannel = null;
 
 function openCreateChannelModal(type) {
   showModal('channel-create-modal');
-  
+
   const textRadio = document.getElementById('modal-channel-type-text');
   const voiceRadio = document.getElementById('modal-channel-type-voice');
   if (type === 'voice') {
@@ -2673,7 +2673,7 @@ function openCreateChannelModal(type) {
 function openChannelSettings(channel) {
   currentEditingChannel = channel;
   showModal('channel-settings-modal');
-  
+
   document.getElementById('modal-edit-channel-name').value = channel.name;
   document.getElementById('channel-edit-modal-prefix').textContent = channel.type === 'voice' ? '🔊' : '#';
 }
