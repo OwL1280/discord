@@ -1090,20 +1090,6 @@ async function connectVoiceChannel(channel) {
     if (avatarEl) {
       avatarEl.style.outline = speaking ? '2px solid var(--status-online)' : 'none';
     }
-    // Broadcast speaking state to peers
-    if (state.voice.presenceChannel) {
-      state.voice.presenceChannel.track({
-        user_id: state.currentUser.id,
-        channel_id: channel.id,
-        guild_id: state.currentGuildId,
-        display_name: state.userProfile.display_name || state.userProfile.username,
-        username: state.userProfile.username,
-        avatar_url: state.userProfile.avatar_url || null,
-        isMuted: state.voice.isMuted,
-        isDeafened: state.voice.isDeafened,
-        speaking: speaking
-      });
-    }
   }, 100);
 
   // Create Supabase Realtime channel for signaling
@@ -1242,21 +1228,25 @@ async function createPeerConnection(peerId, isOfferer) {
 
     // Set up speaking detection for this remote peer
     if (state.voice.audioContext) {
-      const remoteSource = state.voice.audioContext.createMediaStreamSource(remoteStream);
-      const remoteAnalyser = state.voice.audioContext.createAnalyser();
-      remoteAnalyser.fftSize = 512;
-      remoteSource.connect(remoteAnalyser);
-      const remoteData = new Uint8Array(remoteAnalyser.frequencyBinCount);
-      const speakingInterval = setInterval(() => {
-        remoteAnalyser.getByteFrequencyData(remoteData);
-        const vol = remoteData.reduce((s, v) => s + v, 0) / remoteData.length;
-        const isSpeaking = vol > 8;
-        const avatarEl = document.getElementById(`voice-avatar-${peerId}`);
-        if (avatarEl) {
-          avatarEl.style.outline = isSpeaking ? '2px solid var(--status-online)' : 'none';
-        }
-      }, 100);
-      if (state.voice.peers[peerId]) state.voice.peers[peerId].speakingInterval = speakingInterval;
+      try {
+        const remoteSource = state.voice.audioContext.createMediaStreamSource(remoteStream);
+        const remoteAnalyser = state.voice.audioContext.createAnalyser();
+        remoteAnalyser.fftSize = 512;
+        remoteSource.connect(remoteAnalyser);
+        const remoteData = new Uint8Array(remoteAnalyser.frequencyBinCount);
+        const speakingInterval = setInterval(() => {
+          remoteAnalyser.getByteFrequencyData(remoteData);
+          const vol = remoteData.reduce((s, v) => s + v, 0) / remoteData.length;
+          const isSpeaking = vol > 8;
+          const avatarEl = document.getElementById(`voice-avatar-${peerId}`);
+          if (avatarEl) {
+            avatarEl.style.outline = isSpeaking ? '2px solid var(--status-online)' : 'none';
+          }
+        }, 100);
+        if (state.voice.peers[peerId]) state.voice.peers[peerId].speakingInterval = speakingInterval;
+      } catch (err) {
+        console.error('Error establishing remote speaking detection analyser:', err);
+      }
     }
   };
 
