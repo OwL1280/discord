@@ -480,40 +480,35 @@ async function selectGuild(guildId) {
 
 // Subscribe to guild-wide voice presence so we can see who's in which voice channel
 function subscribeToGuildVoicePresence(guildId) {
-  // Unsubscribe from any previous guild voice presence subscription
+  const supabase = window.api.supabase;
+  if (!supabase) return;
+
+  // Remove previous guild voice presence subscription completely from client cache
   if (state.voice.guildPresenceSub) {
-    state.voice.guildPresenceSub.unsubscribe();
+    supabase.removeChannel(state.voice.guildPresenceSub);
     state.voice.guildPresenceSub = null;
   }
   state.voice.guildVoiceStates = {};
-
-  const supabase = window.api.supabase;
-  if (!supabase) return;
 
   const channel = supabase.channel(`guild_voice_presence:${guildId}`);
   channel
     .on('presence', { event: 'sync' }, () => {
       const presenceState = channel.presenceState();
+      console.log(`[Presence Sync] guild_voice_presence:${guildId} state:`, presenceState);
       state.voice.guildVoiceStates = {};
       Object.values(presenceState).forEach(presences => {
         presences.forEach(p => {
           state.voice.guildVoiceStates[p.user_id] = p;
         });
       });
+      console.log(`[Presence Mapped] guildVoiceStates:`, state.voice.guildVoiceStates);
       renderChannels();
     })
-    .on('presence', { event: 'join' }, ({ newPresences }) => {
-      newPresences.forEach(p => { state.voice.guildVoiceStates[p.user_id] = p; });
-      renderChannels();
-    })
-    .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-      leftPresences.forEach(p => { delete state.voice.guildVoiceStates[p.user_id]; });
-      renderChannels();
-    })
-    .subscribe(async (status) => {
+    .subscribe(async (status, err) => {
+      console.log(`[Presence Subscription] guild_voice_presence:${guildId} status:`, status, err || '');
       if (status === 'SUBSCRIBED') {
         if (state.voice.activeChannelId && state.voice.activeGuildId === guildId) {
-          await channel.track({
+          const payload = {
             user_id: state.currentUser.id,
             channel_id: state.voice.activeChannelId,
             guild_id: state.voice.activeGuildId,
@@ -523,7 +518,10 @@ function subscribeToGuildVoicePresence(guildId) {
             isMuted: state.voice.isMuted,
             isDeafened: state.voice.isDeafened,
             speaking: false
-          });
+          };
+          console.log(`[Presence Track] Re-tracking current user in guild ${guildId}:`, payload);
+          const res = await channel.track(payload);
+          console.log(`[Presence Track Result]`, res);
         }
       }
     });
@@ -1175,7 +1173,8 @@ async function connectVoiceChannel(channel) {
         } catch(e) {}
       }
     })
-    .subscribe(async (status) => {
+    .subscribe(async (status, err) => {
+      console.log(`[Signal Channel Subscription] ${signalingChanName} status:`, status, err || '');
       if (status === 'SUBSCRIBED') {
         // Track our presence in this voice channel
         const presencePayload = {
@@ -1189,9 +1188,15 @@ async function connectVoiceChannel(channel) {
           isDeafened: false,
           speaking: false
         };
-        await sigChannel.track(presencePayload);
+        console.log(`[Signal Channel Track] Tracking current user:`, presencePayload);
+        const resSig = await sigChannel.track(presencePayload);
+        console.log(`[Signal Channel Track Result]`, resSig);
         if (state.voice.guildPresenceSub) {
-          await state.voice.guildPresenceSub.track(presencePayload);
+          console.log(`[Guild Presence Track] Tracking current user:`, presencePayload);
+          const resGuild = await state.voice.guildPresenceSub.track(presencePayload);
+          console.log(`[Guild Presence Track Result]`, resGuild);
+        } else {
+          console.warn(`[Guild Presence Track Warning] state.voice.guildPresenceSub is not set!`);
         }
       }
     });
@@ -1304,12 +1309,13 @@ async function disconnectVoiceChannel() {
     state.voice.localAnalyser = null;
   }
 
-  // Unsubscribe from signaling channel (triggers leave presence event for peers)
+  // Unsubscribe and remove signaling channel from client cache
   if (state.voice.presenceChannel) {
-    await state.voice.presenceChannel.unsubscribe();
+    await supabase.removeChannel(state.voice.presenceChannel);
     state.voice.presenceChannel = null;
   }
 
+  // Untrack user from guild presence channel but do not remove the channel
   if (state.voice.guildPresenceSub) {
     await state.voice.guildPresenceSub.untrack();
   }
