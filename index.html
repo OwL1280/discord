@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord</title>
+  <link rel="stylesheet" href="index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- Frameless Window Title Bar -->
+  <div id="title-bar">
+    <div class="title-bar-drag">
+      <svg class="discord-logo-mini" width="16" height="16" viewBox="0 0 127.14 96.36">
+        <path fill="#5865f2" d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.87-.64,1.71-1.34,2.51-2a75.58,75.58,0,0,0,73,0c.8.71,1.64,1.41,2.51,2a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31-18.83C129.81,49.52,123.63,26.69,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+      </svg>
+      <span class="app-title">Discord</span>
+    </div>
+    <div class="title-bar-controls">
+      <button id="btn-minimize" class="title-btn" aria-label="Minimize">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect y="5" width="12" height="2" fill="currentColor"/></svg>
+      </button>
+      <button id="btn-maximize" class="title-btn" aria-label="Maximize">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+      <button id="btn-close" class="title-btn title-close" aria-label="Close">
+        <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="12,1.4 10.6,0 6,4.6 1.4,0 0,1.4 4.6,6 0,10.6 1.4,12 6,7.4 10.6,12 12,10.6 7.4,6" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Application Wrapper -->
+  <div id="app-container" class="hidden">
+    
+    <!-- Sidebar 1: Server List (Leftmost) -->
+    <div id="server-sidebar">
+      <div class="server-item active" id="btn-home" data-tooltip="Mensajes directos">
+        <div class="pill-indicator"></div>
+        <div class="server-icon home-icon">
+          <svg width="28" height="20" viewBox="0 0 127.14 96.36">
+            <path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.87-.64,1.71-1.34,2.51-2a75.58,75.58,0,0,0,73,0c.8.71,1.64,1.41,2.51,2a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31-18.83C129.81,49.52,123.63,26.69,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="separator-line"></div>
+      
+      <div id="guild-list-container">
+        <!-- Rendered Guilds (Servers) go here -->
+      </div>
+      
+      <!-- Server utility buttons -->
+      <div class="server-item server-btn" id="btn-add-server" data-tooltip="Añadir un servidor">
+        <div class="pill-indicator"></div>
+        <div class="server-icon add-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M17,8H10V1A1,1,0,0,0,8,1V8H1a1,1,0,0,0,0,2H8v7a1,1,0,0,0,2,0V10h7a1,1,0,0,0,0-2Z"/></svg>
+        </div>
+      </div>
+      
+      <div class="server-item server-btn" id="btn-join-server-trigger" data-tooltip="Explorar servidores">
+        <div class="pill-indicator"></div>
+        <div class="server-icon explore-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sidebar 2: Channels / DMs -->
+    <div id="channel-sidebar">
+      <div class="sidebar-header" id="sidebar-header-title">
+        <span class="header-title-text">Inicio</span>
+        <!-- Optional Server settings arrow down icon -->
+        <svg class="header-dropdown-icon hidden" id="guild-settings-trigger" width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M4.5,7.5,9,12l4.5-4.5Z"/></svg>
+      </div>
+      
+      <div id="channel-list-scroller">
+        <!-- Rendered Channels (or DM contacts) go here -->
+      </div>
+      <!-- Status Picker Popover -->
+      <div id="status-picker" class="status-picker-popover hidden">
+        <div class="status-picker-item" data-status="online">
+          <div class="status-dot-mini" style="background-color: var(--status-online);"></div>
+          <span>Disponible</span>
+        </div>
+        <div class="status-picker-item" data-status="idle">
+          <div class="status-dot-mini" style="background-color: var(--status-idle);"></div>
+          <span>Ausente</span>
+        </div>
+        <div class="status-picker-item" data-status="dnd">
+          <div class="status-dot-mini" style="background-color: var(--status-dnd);"></div>
+          <span>No molestar</span>
+        </div>
+        <div class="status-picker-item" data-status="offline">
+          <div class="status-dot-mini" style="background-color: var(--status-offline); border: 1px solid var(--text-muted);"></div>
+          <span>Invisible</span>
+        </div>
+        <div class="status-picker-separator"></div>
+        <div class="status-picker-item" id="btn-status-picker-settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px;"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+          <span>Ajustes de perfil</span>
+        </div>
+      </div>
+
+      <!-- User footer area -->
+      <div id="user-footer">
+        <div class="user-info-wrapper" id="btn-profile-trigger" data-tooltip="Ajustes de usuario">
+          <div class="avatar-container">
+            <img class="user-avatar" id="footer-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+            <div class="status-indicator offline" id="footer-status-dot"></div>
+          </div>
+          <div class="user-details">
+            <span class="user-display-name" id="footer-display-name">Username</span>
+            <span class="user-tag" id="footer-username">#0000</span>
+          </div>
+        </div>
+        <div class="user-controls">
+          <button class="footer-control-btn" id="btn-toggle-mic" data-tooltip="Silenciar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.17 14.47 16 12 16s-4.52-1.83-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3.24 3.01 5.76 6.16 6.21V20c0 .55.45 1 1 1s1-.45 1-1v-1.64c3.15-.45 5.67-2.97 6.16-6.21.09-.6-.39-1.14-1-1.14z"/>
+            </svg>
+          </button>
+          <button class="footer-control-btn" id="btn-toggle-audio" data-tooltip="Ensordecer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12v7c0 1.1.9 2 2 2h3c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2H4v-1c0-4.41 3.59-8 8-8s8 4.41 8 8v1h-3c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h3c1.1 0 2-.9 2-2v-7c0-5.52-4.48-10-10-10z"/>
+            </svg>
+          </button>
+          <button class="footer-control-btn" id="btn-user-settings" data-tooltip="Ajustes de usuario">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chat Container -->
+    <div id="chat-container">
+      
+      <!-- Chat Header -->
+      <div id="chat-header">
+        <div class="chat-header-title">
+          <svg class="hashtag-icon" id="chat-header-icon" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M5.886 21l.886-5.886H1.143v-1.745h5.886l.886-5.886H2.286V5.738h5.886l.886-4.738h1.745L9.917 5.738h5.886l.886-4.738h1.745l-.886 4.738h5.631v1.745h-5.886l-.886 5.886h5.631v1.745h-5.886L16.29 21h-1.745l.886-5.886H9.545L8.66 21H6.914zm3.543-7.631h5.886l.886-5.886H9.429l-.886 5.886z"/></svg>
+          <span class="channel-name-title" id="chat-title">general</span>
+          <span class="channel-separator-pipe">|</span>
+          <span class="channel-description-text" id="chat-description">Canal general de conversación por texto.</span>
+        </div>
+        <div class="chat-header-controls">
+          <!-- Create Invite Code button in header -->
+          <button class="header-control-btn" id="btn-create-invite" data-tooltip="Crear invitación">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+          <!-- Toggle members list button -->
+          <button class="header-control-btn active" id="btn-toggle-members" data-tooltip="Lista de miembros">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Messages & Sidebar Wrapper -->
+      <div id="messages-and-sidebar-wrapper">
+        <div id="messages-scroller">
+          <div id="message-feed">
+            <!-- Rendered Messages will go here -->
+          </div>
+        </div>
+        
+        <!-- Sidebar 3: Member List (Rightmost) -->
+        <div id="member-sidebar" class="visible">
+          <!-- Rendered server members, categorized by roles -->
+        </div>
+
+        <!-- Friends View (Visible on Home) -->
+        <div id="friends-view" class="hidden">
+          <div class="friends-sub-header">
+            <button class="friends-tab active" data-tab="online">Disponible</button>
+            <button class="friends-tab" data-tab="all">Todos</button>
+            <button class="friends-tab add-friend-tab-btn" data-tab="add">Añadir amigo</button>
+          </div>
+          <div class="friends-content-area">
+            <div id="friends-list" class="friends-list"></div>
+            
+            <div id="add-friend-form-box" class="add-friend-form-box hidden">
+              <h3 class="add-friend-form-title">AÑADIR AMIGO</h3>
+              <p class="add-friend-form-subtitle">Puedes añadir amigos con su nombre de usuario de Supabase.</p>
+              <div class="add-friend-input-row">
+                <input type="text" id="add-friend-username-input" placeholder="Introduce un nombre de usuario">
+                <button class="btn btn-primary btn-sm" id="btn-submit-friend-request">Enviar solicitud de amistad</button>
+              </div>
+              <div id="add-friend-message" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Friends Active Sidebar (Visible on Home) -->
+        <div id="friends-active-sidebar" class="hidden">
+          <h3 class="active-sidebar-title">Activo ahora</h3>
+          <div class="active-cards-list">
+            <div class="active-card">
+              <div class="active-card-user">
+                <img class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/1.png">
+                <div class="status-indicator online"></div>
+                <div class="active-card-details">
+                  <span class="active-user-name">Soporte Supabase</span>
+                  <span class="active-game-title">Jugando a Minecraft</span>
+                  <span class="active-game-details">Modo Supervivencia (1h 30m)</span>
+                </div>
+              </div>
+            </div>
+            <div class="active-card">
+              <div class="active-card-user">
+                <img class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/2.png">
+                <div class="status-indicator idle"></div>
+                <div class="active-card-details">
+                  <span class="active-user-name">Amigo Beta</span>
+                  <span class="active-game-title">Visual Studio Code</span>
+                  <span class="active-game-details">Editando app.js (15m)</span>
+                </div>
+              </div>
+            </div>
+            <div class="active-card">
+              <div class="active-card-user">
+                <img class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/3.png">
+                <div class="status-indicator dnd"></div>
+                <div class="active-card-details">
+                  <span class="active-user-name">elfckingbho</span>
+                  <span class="active-game-title">Escuchando Spotify</span>
+                  <span class="active-game-details">Canción: Antigravity - AI</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulated Voice Active bar (bottom, above message input) -->
+      <div id="voice-status-bar" class="hidden">
+        <div class="voice-status-left">
+          <div class="voice-pulse-icon">
+            <div class="pulse-ring"></div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#23a55a"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zm0 11.9A5.92 5.92 0 0 1 7.2 9.4c-.49 0-.9.36-.98.85C5.7 12.63 7.6 15 10.1 15.36V19H8c-.55 0-1 .45-1 1s.45 1 1 1h8c.55 0 1-.45 1-1s-.45-1-1-1h-2.1v-3.64c2.5-.36 4.4-2.73 3.88-5.11a.98.98 0 0 0-.98-.85c-1.42 0-2.73 1.15-2.7 2.5z"/></svg>
+          </div>
+          <div class="voice-status-text">
+            <span class="voice-conn-status">Voz conectada</span>
+            <span class="voice-channel-connected">general / Servidor</span>
+          </div>
+        </div>
+        <div class="voice-status-controls">
+          <button class="voice-status-btn hover-red" id="btn-voice-disconnect" data-tooltip="Desconectar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15.5h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Message Input -->
+      <div id="message-input-area">
+        <div class="message-input-box">
+          <button class="message-attach-btn" id="btn-message-attach" data-tooltip="Adjuntar archivo (Simulado)">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+          <!-- Message text area -->
+          <textarea id="message-input" rows="1" placeholder="Enviar un mensaje a #general"></textarea>
+          <button class="message-emoji-btn" id="btn-message-emoji" data-tooltip="Emojis (Simulado)">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          </button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Dynamic Modals / Overlays -->
+  <div id="modal-overlay" class="modal-overlay visible">
+    
+    <!-- 1. Authentication Modal (Shown by default) -->
+    <div id="auth-modal" class="modal-box card-modal auth-card">
+      <div class="auth-brand-header">
+        <svg class="discord-logo-large" width="124" height="34" viewBox="0 0 127.14 96.36">
+          <path fill="#ffffff" d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.87-.64,1.71-1.34,2.51-2a75.58,75.58,0,0,0,73,0c.8.71,1.64,1.41,2.51,2a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31-18.83C129.81,49.52,123.63,26.69,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+        </svg>
+        <span class="auth-header-title">Discord</span>
+      </div>
+      <div id="auth-form-login">
+        <h2 class="auth-title">¡Hola de nuevo!</h2>
+        <p class="auth-subtitle">¡Nos alegra verte otra vez!</p>
+        <div class="auth-input-group">
+          <label>CORREO ELECTRÓNICO</label>
+          <input type="email" id="login-email" required>
+        </div>
+        <div class="auth-input-group">
+          <label>CONTRASEÑA</label>
+          <input type="password" id="login-password" required>
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-login">Iniciar sesión</button>
+        <p class="auth-footer-text">¿Necesitas una cuenta? <a href="#" id="link-show-register">Registrarse</a></p>
+        <p class="auth-footer-text" style="margin-top: 8px;"><a href="#" id="link-paste-token" style="color: var(--status-idle);">¿Ya verificaste tu correo? Pega el enlace de confirmación aquí</a></p>
+      </div>
+
+      <div id="auth-form-register" class="hidden">
+        <h2 class="auth-title">Crear una cuenta</h2>
+        <div class="auth-input-group">
+          <label>CORREO ELECTRÓNICO</label>
+          <input type="email" id="register-email" required>
+        </div>
+        <div class="auth-input-group">
+          <label>NOMBRE DE USUARIO</label>
+          <input type="text" id="register-username" required>
+        </div>
+        <div class="auth-input-group">
+          <label>NOMBRE EN PANTALLA (OPCIONAL)</label>
+          <input type="text" id="register-displayname">
+        </div>
+        <div class="auth-input-group">
+          <label>CONTRASEÑA</label>
+          <input type="password" id="register-password" required>
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-register">Continuar</button>
+        <p class="auth-footer-text">¿Ya tienes una cuenta? <a href="#" id="link-show-login">Iniciar sesión</a></p>
+      </div>
+    </div>
+
+    <!-- 2. Create/Join Server Modal -->
+    <div id="server-modal" class="modal-box card-modal hidden">
+      <button class="modal-close-btn" onclick="closeModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4 19.8L12 13.4 5.6 19.8 4.2 18.4 10.6 12 4.2 5.6 5.6 4.2 12 10.6 18.4 4.2 19.8 5.6 13.4 12 19.8 18.4z"/></svg>
+      </button>
+      <div id="server-choices">
+        <h2 class="modal-title">Crea tu servidor</h2>
+        <p class="modal-subtitle">Tu servidor es donde te juntas con tus amigos. Crea el tuyo y empieza a hablar.</p>
+        
+        <button class="server-choice-card" id="btn-create-server-choice">
+          <span>Crear mi propio servidor</span>
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M6,3,11.5,9,6,15Z"/></svg>
+        </button>
+
+        <div class="separator-line-or">
+          <span>¿Ya tienes una invitación?</span>
+        </div>
+
+        <button class="btn btn-secondary btn-block" id="btn-join-server-choice">Unirse a un servidor</button>
+      </div>
+
+      <div id="server-create-form" class="hidden">
+        <h2 class="modal-title">Personaliza tu servidor</h2>
+        <p class="modal-subtitle">Dale una personalidad única con un nombre y un icono. Siempre podrás cambiarlo más tarde.</p>
+        <div class="auth-input-group">
+          <label>NOMBRE DEL SERVIDOR</label>
+          <input type="text" id="new-server-name" placeholder="Servidor de..." required>
+        </div>
+        <div class="modal-footer-actions">
+          <button class="btn btn-text" id="btn-back-choices-1">Atrás</button>
+          <button class="btn btn-primary" id="btn-submit-create-server">Crear</button>
+        </div>
+      </div>
+
+      <div id="server-join-form" class="hidden">
+        <h2 class="modal-title">Unirse a un servidor</h2>
+        <p class="modal-subtitle">Introduce un enlace o código de invitación para unirte a un servidor existente.</p>
+        <div class="auth-input-group">
+          <label>ENLACE O CÓDIGO DE INVITACIÓN</label>
+          <input type="text" id="join-invite-code" placeholder="h7fG8s9" required>
+        </div>
+        <div class="modal-footer-actions">
+          <button class="btn btn-text" id="btn-back-choices-2">Atrás</button>
+          <button class="btn btn-primary" id="btn-submit-join-server">Unirse al servidor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.5. Create Channel Modal -->
+    <div id="channel-create-modal" class="modal-box card-modal hidden">
+      <button class="modal-close-btn" onclick="closeModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4 19.8L12 13.4 5.6 19.8 4.2 18.4 10.6 12 4.2 5.6 5.6 4.2 12 10.6 18.4 4.2 19.8 5.6 13.4 12 19.8 18.4z"/></svg>
+      </button>
+      <h2 class="modal-title" style="text-align: left; margin-bottom: 8px;">Crear canal</h2>
+      <p class="modal-subtitle" style="text-align: left; margin-bottom: 20px;">En un servidor, los canales son donde te comunicas.</p>
+      
+      <div class="auth-input-group">
+        <label>TIPO DE CANAL</label>
+        <div class="radio-group-row">
+          <label class="radio-label">
+            <input type="radio" name="modal-new-channel-type" id="modal-channel-type-text" value="text" checked>
+            <span>Texto</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="modal-new-channel-type" id="modal-channel-type-voice" value="voice">
+            <span>Voz</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="auth-input-group">
+        <label>NOMBRE DEL CANAL</label>
+        <div class="channel-name-input-wrapper" style="position:relative; display:flex; align-items:center;">
+          <span style="position:absolute; left:12px; color:var(--text-muted); font-size:18px; font-weight:500;" id="channel-modal-prefix">#</span>
+          <input type="text" id="modal-new-channel-name" placeholder="nuevo-canal" style="padding-left:32px; background-color:var(--input-background); border: 1px solid rgba(0,0,0,0.3); border-radius:4px; color:var(--text-normal); padding-top:10px; padding-bottom:10px; width:100%; outline:none;" required>
+        </div>
+      </div>
+      
+      <div class="modal-footer-actions" style="margin-top:24px;">
+        <button class="btn btn-text" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-modal-submit-create-channel">Crear canal</button>
+      </div>
+    </div>
+
+    <!-- 2.6. Channel Settings Modal -->
+    <div id="channel-settings-modal" class="modal-box card-modal hidden">
+      <button class="modal-close-btn" onclick="closeModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4 19.8L12 13.4 5.6 19.8 4.2 18.4 10.6 12 4.2 5.6 5.6 4.2 12 10.6 18.4 4.2 19.8 5.6 13.4 12 19.8 18.4z"/></svg>
+      </button>
+      <h2 class="modal-title" style="text-align: left; margin-bottom: 8px;">Ajustes del canal</h2>
+      <p class="modal-subtitle" style="text-align: left; margin-bottom: 20px;">Edita los detalles de este canal.</p>
+      
+      <div class="auth-input-group">
+        <label>NOMBRE DEL CANAL</label>
+        <div class="channel-name-input-wrapper" style="position:relative; display:flex; align-items:center;">
+          <span style="position:absolute; left:12px; color:var(--text-muted); font-size:18px; font-weight:500;" id="channel-edit-modal-prefix">#</span>
+          <input type="text" id="modal-edit-channel-name" placeholder="nombre-canal" style="padding-left:32px; background-color:var(--input-background); border: 1px solid rgba(0,0,0,0.3); border-radius:4px; color:var(--text-normal); padding-top:10px; padding-bottom:10px; width:100%; outline:none;" required>
+        </div>
+      </div>
+      
+      <div class="modal-footer-actions" style="margin-top:24px; display:flex; justify-content:space-between; align-items:center; width:100%;">
+        <button class="btn btn-secondary" id="btn-modal-delete-channel" style="background-color: var(--status-dnd); border-color: var(--status-dnd); color: white;">Eliminar canal</button>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-text" onclick="closeModal()">Cancelar</button>
+          <button class="btn btn-primary" id="btn-modal-submit-edit-channel">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Invite Members Modal -->
+    <div id="invite-modal" class="modal-box card-modal invite-card-modal hidden">
+      <button class="modal-close-btn" onclick="closeModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4 19.8L12 13.4 5.6 19.8 4.2 18.4 10.6 12 4.2 5.6 5.6 4.2 12 10.6 18.4 4.2 19.8 5.6 13.4 12 19.8 18.4z"/></svg>
+      </button>
+      <h2 class="modal-title" style="margin-bottom:8px;">Invita amigos a <span id="invite-server-name">Servidor</span></h2>
+      <p class="modal-subtitle" style="margin-bottom:20px;">Envía un enlace de invitación a un amigo para darle acceso a este servidor.</p>
+      
+      <div class="invite-url-container">
+        <label class="input-label-caps">ENLACE DE INVITACIÓN DIRECTA</label>
+        <div class="invite-input-row">
+          <input type="text" id="generated-invite-url" readonly value="">
+          <button class="btn btn-primary" id="btn-copy-invite">Copiar</button>
+        </div>
+      </div>
+
+      <div class="invite-options-row">
+        <div class="auth-input-group" style="flex:1; margin-bottom:0;">
+          <label>DURACIÓN DE INVITACIÓN</label>
+          <select id="invite-duration">
+            <option value="86400">1 Día</option>
+            <option value="604800" selected>7 Días</option>
+            <option value="never">Nunca expira</option>
+          </select>
+        </div>
+        <div class="auth-input-group" style="flex:1; margin-bottom:0;">
+          <label>USOS MÁXIMOS</label>
+          <select id="invite-max-uses">
+            <option value="0" selected>Sin límite</option>
+            <option value="1">1 uso</option>
+            <option value="5">5 usos</option>
+            <option value="10">10 usos</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-block" id="btn-generate-new-invite" style="margin-top:20px;">Generar nuevo enlace</button>
+    </div>
+
+    <!-- 4. User Settings Modal -->
+    <div id="user-settings-modal" class="modal-box fullscreen-modal hidden">
+      <div class="fullscreen-settings-container">
+        
+        <!-- Left Sidebar inside modal -->
+        <div class="settings-sidebar">
+          <div class="settings-sidebar-group">
+            <div class="sidebar-item-header">AJUSTES DE USUARIO</div>
+            <button class="settings-sidebar-item active" id="btn-settings-user-profile">Mi cuenta</button>
+            <button class="settings-sidebar-item" id="btn-settings-logout" style="color: var(--status-dnd);">Cerrar sesión</button>
+          </div>
+        </div>
+
+        <!-- Right Content panel inside modal -->
+        <div class="settings-content-pane">
+          <div class="settings-main-view">
+            <h2 class="settings-header-title">Mi cuenta</h2>
+            
+            <div class="user-profile-card">
+              <div class="profile-banner"></div>
+              <div class="profile-body">
+                <div class="profile-avatar-row">
+                  <div class="avatar-editable-container">
+                    <img id="settings-avatar-preview" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar Preview">
+                  </div>
+                </div>
+                <div class="profile-inputs-box">
+                  <div class="auth-input-group">
+                    <label>NOMBRE EN PANTALLA</label>
+                    <input type="text" id="settings-display-name">
+                  </div>
+                  <div class="auth-input-group">
+                    <label>NOMBRE DE USUARIO</label>
+                    <input type="text" id="settings-username" readonly style="opacity: 0.6; cursor: not-allowed;">
+                  </div>
+                  <div class="auth-input-group">
+                    <label>ENLACE A IMAGEN DE AVATAR (URL)</label>
+                    <input type="text" id="settings-avatar-url" placeholder="https://ejemplo.com/mi-avatar.png">
+                  </div>
+                  <div class="auth-input-group">
+                    <label>ESTADO DE CONEXIÓN</label>
+                    <select id="settings-user-status">
+                      <option value="online">En línea</option>
+                      <option value="idle">Ausente</option>
+                      <option value="dnd">No molestar</option>
+                      <option value="offline">Invisible</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="profile-footer-actions">
+                  <button class="btn btn-primary" id="btn-save-user-profile">Guardar cambios</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          
+          <!-- Close button floating in top-right of panel -->
+          <div class="settings-close-col">
+            <button class="settings-close-btn" onclick="closeSettingsModal()">
+              <div class="close-icon-circle">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4 19.8L12 13.4 5.6 19.8 4.2 18.4 10.6 12 4.2 5.6 5.6 4.2 12 10.6 18.4 4.2 19.8 5.6 13.4 12 19.8 18.4z"/></svg>
+              </div>
+              <span class="esc-text">ESC</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 5. Server Settings Modal (Guild Settings) -->
+    <div id="server-settings-modal" class="modal-box fullscreen-modal hidden">
+      <div class="fullscreen-settings-container">
+        
+        <!-- Left Sidebar inside server settings -->
+        <div class="settings-sidebar">
+          <div class="settings-sidebar-group">
+            <div class="sidebar-item-header" id="settings-server-sidebar-title">AJUSTES DE SERVIDOR</div>
+            <button class="settings-sidebar-item active" id="tab-guild-overview">Vista general</button>
+            <button class="settings-sidebar-item" id="tab-guild-roles">Roles y permisos</button>
+            <button class="settings-sidebar-item" id="tab-guild-members">Miembros</button>
+            <button class="settings-sidebar-item" id="btn-delete-guild-trigger" style="color: var(--status-dnd); margin-top:20px;">Eliminar servidor</button>
+          </div>
+        </div>
+
+        <!-- Right Content panel inside server settings -->
+        <div class="settings-content-pane">
+          <div class="settings-main-view" id="server-settings-view-pane">
+            
+            <!-- Vista General View -->
+            <div id="view-guild-overview" class="guild-settings-tab-view">
+              <h2 class="settings-header-title">Vista general del servidor</h2>
+              <div class="guild-overview-inputs">
+                <div class="auth-input-group">
+                  <label>NOMBRE DEL SERVIDOR</label>
+                  <input type="text" id="settings-guild-name">
+                </div>
+                <div class="auth-input-group">
+                  <label>URL DEL ICONO DEL SERVIDOR</label>
+                  <input type="text" id="settings-guild-icon-url" placeholder="https://ejemplo.com/icono.png">
+                </div>
+              </div>
+              <button class="btn btn-primary" id="btn-save-guild-overview" style="margin-top:20px;">Guardar cambios</button>
+            </div>
+
+
+
+            <!-- Roles y Permisos View -->
+            <div id="view-guild-roles" class="guild-settings-tab-view hidden">
+              <div class="flex-header-row">
+                <h2 class="settings-header-title">Roles y permisos</h2>
+                <button class="btn btn-primary btn-sm" id="btn-create-role-trigger">Crear rol</button>
+              </div>
+              
+              <div class="roles-manager-layout">
+                <!-- Left panel: role list -->
+                <div class="roles-list-column" id="guild-settings-roles-list">
+                  <!-- Roles rendered here -->
+                </div>
+                <!-- Right panel: role edit options -->
+                <div class="role-editor-column hidden" id="role-editor-config-pane">
+                  <h3 class="role-editor-title" id="role-editor-title-name">Editar rol</h3>
+                  <div class="auth-input-group">
+                    <label>NOMBRE DE ROL</label>
+                    <input type="text" id="edit-role-name">
+                  </div>
+                  <div class="auth-input-group">
+                    <label>COLOR DE ROL (HEX)</label>
+                    <div class="color-picker-row">
+                      <input type="color" id="edit-role-color-picker">
+                      <input type="text" id="edit-role-color-text" placeholder="#5865f2">
+                    </div>
+                  </div>
+                  <div class="auth-input-group">
+                    <label>PERMISOS DE ROL</label>
+                    <div class="permissions-checkbox-list" id="role-edit-permissions-list">
+                      <!-- Dynamically rendered checkbox inputs for Discord permissions -->
+                    </div>
+                  </div>
+                  <div class="flex-actions-row" style="margin-top:20px;">
+                    <button class="btn btn-secondary" id="btn-delete-role" style="background-color:var(--status-dnd); border-color:var(--status-dnd);">Eliminar rol</button>
+                    <button class="btn btn-primary" id="btn-save-role-settings">Guardar rol</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gestión de Miembros View -->
+            <div id="view-guild-members" class="guild-settings-tab-view hidden">
+              <h2 class="settings-header-title">Miembros del servidor</h2>
+              <div class="members-manager-list" id="guild-settings-members-list">
+                <!-- Rendered server members with roles dropdown and Kick options -->
+              </div>
+            </div>
+
+          </div>
+          
+          <!-- Close button floating in top-right of panel -->
+          <div class="settings-close-col">
+            <button class="settings-close-btn" onclick="closeSettingsModal()">
+              <div class="close-icon-circle">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4 19.8L12 13.4 5.6 19.8 4.2 18.4 10.6 12 4.2 5.6 5.6 4.2 12 10.6 18.4 4.2 19.8 5.6 13.4 12 19.8 18.4z"/></svg>
+              </div>
+              <span class="esc-text">ESC</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="supabase.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
