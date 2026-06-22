@@ -1018,17 +1018,26 @@ function buildMemberCardHTML(member, roleColor) {
 // WebRTC Voice Chat Logic
 // -------------------------------------------------------------
 
-// ICE servers (free STUN servers from Google)
+// ICE servers - STUN + multiple free TURN providers for cross-network support
 const ICE_SERVERS = [
+  // Google STUN
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  // freestun.net - free, no registration required
   {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
+    urls: 'turn:freestun.net:3478',
+    username: 'free',
+    credential: 'free'
   },
   {
-    urls: 'turn:openrelay.metered.ca:443',
+    urls: 'turns:freestun.net:5349',
+    username: 'free',
+    credential: 'free'
+  },
+  // OpenRelay (metered.ca) - backup
+  {
+    urls: 'turn:openrelay.metered.ca:80',
     username: 'openrelayproject',
     credential: 'openrelayproject'
   },
@@ -1249,7 +1258,15 @@ async function createPeerConnection(peerId, isOfferer) {
   // ICE candidate exchange
   pc.onicecandidate = (event) => {
     if (event.candidate) {
-      console.log(`[WebRTC ICE] Generated local candidate for ${peerId}:`, event.candidate.candidate);
+      // Parse candidate type for clear logging (host / srflx / relay)
+      const candidateStr = event.candidate.candidate || '';
+      const typeMatch = candidateStr.match(/typ (\w+)/);
+      const candidateType = typeMatch ? typeMatch[1] : 'unknown';
+      if (candidateType === 'relay') {
+        console.log(`[WebRTC ICE] ✅ RELAY (TURN) candidate generated for ${peerId}:`, candidateStr);
+      } else {
+        console.log(`[WebRTC ICE] [${candidateType}] candidate for ${peerId}:`, candidateStr);
+      }
       if (state.voice.presenceChannel) {
         state.voice.presenceChannel.send({
           type: 'broadcast',
@@ -1260,7 +1277,7 @@ async function createPeerConnection(peerId, isOfferer) {
         console.warn(`[WebRTC ICE] No presenceChannel to send candidate to ${peerId}`);
       }
     } else {
-      console.log(`[WebRTC ICE] Gathering completed for peer ${peerId}`);
+      console.log(`[WebRTC ICE] ✅ Gathering complete for peer ${peerId}. No more candidates.`);
     }
   };
 
