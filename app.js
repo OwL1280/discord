@@ -1100,43 +1100,56 @@ async function connectVoiceChannel(channel) {
   sigChannel
     .on('presence', { event: 'sync' }, async () => {
       const presenceState = sigChannel.presenceState();
+      console.log(`[Signal Presence Sync] Raw state:`, presenceState);
       const allPeers = [];
       Object.values(presenceState).forEach(presences => {
         presences.forEach(p => {
           if (p.user_id !== state.currentUser.id) allPeers.push(p);
         });
       });
+      console.log(`[Signal Presence Sync] Peers present in voice channel:`, allPeers.map(p => p.user_id));
       // Initiate connections to peers with smaller user_id (lexicographic offer/answer negotiation)
       for (const peer of allPeers) {
         if (!state.voice.peers[peer.user_id] && peer.user_id < state.currentUser.id) {
+          console.log(`[Signal Presence Sync] Initiating WebRTC offer to ${peer.user_id}`);
           await createPeerConnection(peer.user_id, true);
         }
       }
     })
     .on('presence', { event: 'join' }, async ({ newPresences }) => {
+      console.log(`[Signal Presence Join] New presences joined:`, newPresences);
       for (const p of newPresences) {
         if (p.user_id !== state.currentUser.id && !state.voice.peers[p.user_id]) {
           // The peer with the lexicographically smaller ID sends the offer
           if (state.currentUser.id < p.user_id) {
+            console.log(`[Signal Presence Join] Initiating WebRTC offer to ${p.user_id}`);
             await createPeerConnection(p.user_id, true);
           }
         }
       }
     })
     .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+      console.log(`[Signal Presence Leave] Presences left:`, leftPresences);
       leftPresences.forEach(p => {
         if (p.user_id !== state.currentUser.id) {
+          console.log(`[Signal Presence Leave] Closing connection for peer ${p.user_id}`);
           closePeer(p.user_id);
         }
       });
     })
     .on('broadcast', { event: 'offer' }, async ({ payload }) => {
+      console.log(`[Signal Offer Broadcast] Received offer broadcast:`, payload);
       if (payload.target !== state.currentUser.id) return;
+      console.log(`[Signal Offer Broadcast] Processing offer from ${payload.from}`);
       const pc = await createPeerConnection(payload.from, false);
       if (!pc) return;
+      console.log(`[Signal Offer Broadcast] Setting remote description`);
       await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      console.log(`[Signal Offer Broadcast] Creating WebRTC answer`);
       const answer = await pc.createAnswer();
+      console.log(`[Signal Offer Broadcast] Setting local description`);
       await pc.setLocalDescription(answer);
+      console.log(`[Signal Offer Broadcast] Sending answer to ${payload.from}`);
       sigChannel.send({
         type: 'broadcast',
         event: 'answer',
@@ -1144,19 +1157,26 @@ async function connectVoiceChannel(channel) {
       });
     })
     .on('broadcast', { event: 'answer' }, async ({ payload }) => {
+      console.log(`[Signal Answer Broadcast] Received answer broadcast:`, payload);
       if (payload.target !== state.currentUser.id) return;
+      console.log(`[Signal Answer Broadcast] Processing answer from ${payload.from}`);
       const peerEntry = state.voice.peers[payload.from];
       if (peerEntry && peerEntry.pc) {
+        console.log(`[Signal Answer Broadcast] Setting remote description for ${payload.from}`);
         await peerEntry.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
       }
     })
     .on('broadcast', { event: 'ice' }, async ({ payload }) => {
+      console.log(`[Signal ICE Broadcast] Received ICE candidate from ${payload.from}`);
       if (payload.target !== state.currentUser.id) return;
       const peerEntry = state.voice.peers[payload.from];
       if (peerEntry && peerEntry.pc && payload.candidate) {
         try {
+          console.log(`[Signal ICE Broadcast] Adding ICE candidate to RTCPeerConnection for ${payload.from}`);
           await peerEntry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-        } catch(e) {}
+        } catch(e) {
+          console.error(`[Signal ICE Broadcast] Error adding ICE candidate:`, e);
+        }
       }
     })
     .subscribe(async (status, err) => {
@@ -1192,32 +1212,68 @@ async function connectVoiceChannel(channel) {
 }
 
 async function createPeerConnection(peerId, isOfferer) {
-  if (state.voice.peers[peerId]) return state.voice.peers[peerId].pc;
+  console.log(`[WebRTC] createPeerConnection for peer ${peerId}, isOfferer = ${isOfferer}`);
+  if (state.voice.peers[peerId]) {
+    console.log(`[WebRTC] Peer connection for ${peerId} already exists`);
+    return state.voice.peers[peerId].pc;
+  }
 
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
   state.voice.peers[peerId] = { pc, speakingInterval: null };
 
+  // Log connection state changes
+  pc.onconnectionstatechange = () => {
+    console.log(`[WebRTC State] Connection state for ${peerId}: ${pc.connectionState}`);
+  };
+  pc.oniceconnectionstatechange = () => {
+    console.log(`[WebRTC State] ICE Connection state for ${peerId}: ${pc.iceConnectionState}`);
+  };
+  pc.onicegatheringstatechange = () => {
+    console.log(`[WebRTC State] ICE Gathering state for ${peerId}: ${pc.iceGatheringState}`);
+  };
+  pc.onsignalingstatechange = () => {
+    console.log(`[WebRTC State] Signaling state for ${peerId}: ${pc.signalingState}`);
+  };
+
   // Add local audio tracks
   if (state.voice.localStream) {
+    console.log(`[WebRTC] Adding local audio tracks to peer connection for ${peerId}`);
     state.voice.localStream.getTracks().forEach(track => {
       pc.addTrack(track, state.voice.localStream);
+      console.log(`[WebRTC] Local track added: id=${track.id}, kind=${track.kind}`);
     });
+  } else {
+    console.warn(`[WebRTC] No localStream found to add to peer connection for ${peerId}`);
   }
 
   // ICE candidate exchange
   pc.onicecandidate = (event) => {
-    if (event.candidate && state.voice.presenceChannel) {
-      state.voice.presenceChannel.send({
-        type: 'broadcast',
-        event: 'ice',
-        payload: { from: state.currentUser.id, target: peerId, candidate: event.candidate }
-      });
+    if (event.candidate) {
+      console.log(`[WebRTC ICE] Generated local candidate for ${peerId}:`, event.candidate.candidate);
+      if (state.voice.presenceChannel) {
+        state.voice.presenceChannel.send({
+          type: 'broadcast',
+          event: 'ice',
+          payload: { from: state.currentUser.id, target: peerId, candidate: event.candidate }
+        });
+      } else {
+        console.warn(`[WebRTC ICE] No presenceChannel to send candidate to ${peerId}`);
+      }
+    } else {
+      console.log(`[WebRTC ICE] Gathering completed for peer ${peerId}`);
     }
   };
 
   // When we receive remote audio
   pc.ontrack = (event) => {
+    console.log(`[WebRTC Track] Received remote track from ${peerId}: kind=${event.track.kind}, id=${event.track.id}`);
     const remoteStream = event.streams[0];
+    if (!remoteStream) {
+      console.warn(`[WebRTC Track] No streams found in ontrack event for ${peerId}`);
+      return;
+    }
+    console.log(`[WebRTC Track] Remote stream tracks count:`, remoteStream.getTracks().length);
+
     // Play audio
     const audio = new Audio();
     audio.srcObject = remoteStream;
@@ -1225,10 +1281,12 @@ async function createPeerConnection(peerId, isOfferer) {
     if (state.voice.isDeafened) audio.muted = true;
     audio.id = `audio-peer-${peerId}`;
     document.body.appendChild(audio);
+    console.log(`[WebRTC Playback] Playing remote audio for ${peerId}, muted=${audio.muted}`);
 
     // Set up speaking detection for this remote peer
     if (state.voice.audioContext) {
       try {
+        console.log(`[WebRTC Analyser] Setting up speaking analyser for remote peer ${peerId}`);
         const remoteSource = state.voice.audioContext.createMediaStreamSource(remoteStream);
         const remoteAnalyser = state.voice.audioContext.createAnalyser();
         remoteAnalyser.fftSize = 512;
@@ -1244,21 +1302,27 @@ async function createPeerConnection(peerId, isOfferer) {
           }
         }, 100);
         if (state.voice.peers[peerId]) state.voice.peers[peerId].speakingInterval = speakingInterval;
+        console.log(`[WebRTC Analyser] Speaking analyser set up successfully for ${peerId}`);
       } catch (err) {
-        console.error('Error establishing remote speaking detection analyser:', err);
+        console.error(`[WebRTC Analyser Error] Error establishing remote speaking analyser for ${peerId}:`, err);
       }
     }
   };
 
   if (isOfferer) {
+    console.log(`[WebRTC Negotiation] Creating offer for ${peerId}`);
     const offer = await pc.createOffer();
+    console.log(`[WebRTC Negotiation] Setting local description (offer) for ${peerId}`);
     await pc.setLocalDescription(offer);
     if (state.voice.presenceChannel) {
+      console.log(`[WebRTC Negotiation] Broadcasting offer to ${peerId}`);
       state.voice.presenceChannel.send({
         type: 'broadcast',
         event: 'offer',
         payload: { from: state.currentUser.id, target: peerId, sdp: offer }
       });
+    } else {
+      console.warn(`[WebRTC Negotiation] presenceChannel is not set, cannot send offer to ${peerId}`);
     }
   }
 
